@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Stimulus Preview</title>
+    <style>
+        /* Basic page styling */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Chat window container */
+        .chat-container {
+            width: 100%;
+            max-width: 1000px; /* <-- CHANGED: Made the window even wider */
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            margin: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+        .chat-header {
+            background-color: #f5f5f5;
+            padding: 14px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+            font-weight: 600; /* Semibold */
+            font-size: 1.05em;
+            color: #333;
+        }
+        .chat-body {
+            padding: 16px;
+            min-height: 400px; /* Give it some space */
+        }
+
+        /* User message styles */
+        .user-message-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+        }
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 18px 18px 4px 18px;
+            max-width: 80%;
+            line-height: 1.4;
+        }
+
+        /* AI message styles */
+        .ai-message-container {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 12px;
+        }
+        .ai-message {
+            background-color: #e9e9eb;
+            color: #333;
+            padding: 10px 14px;
+            border-radius: 18px 18px 18px 4px;
+            max-width: 85%;
+            line-height: 1.5; /* Increased for readability */
+        }
+        /* Styling for the new answer format */
+        .ai-message p { margin: 10px 0; }
+        .ai-message p:first-child { margin-top: 0; }
+        .ai-message p:last-child { margin-bottom: 0; }
+        .ai-message ul { padding-left: 20px; margin: 10px 0; }
+        .ai-message li { margin-bottom: 8px; }
+
+        /* "Thinking" box styles */
+        .thinking-container {
+            display: none; /* Hidden by default */
+            justify-content: flex-start;
+            margin-bottom: 12px;
+        }
+        .thinking-box {
+            background-color: #f8f9fa; /* Slightly different background */
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            max-width: 85%;
+            font-size: 0.9em;
+            color: #444;
+            line-height: 1.4;
+        }
+        .thinking-box strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #222;
+            font-weight: 600;
+        }
+
+        /* Typewriter cursor CSS has been REMOVED */
+
+    </style>
+</head>
+<body>
+
+    <!-- Hidden div for the CoT content -->
+    <div id="cot-source" style="display: none;">
+        <strong>Thinking...</strong>
+        <p>Hmm, the user is describing two interconnected issues - daytime fatigue and difficulty falling asleep. This classic combination suggests their circadian rhythm or sleep hygiene needs adjustment. They're likely frustrated by this cycle and seeking practical solutions rather than just medical explanations.</p>
+        <p>The response should first validate their experience before providing actionable steps. Since they didn't mention pain or other symptoms, we can focus on behavioral modifications first. The structure should move from immediate environmental fixes to longer-term habit changes.</p>
+        <p>I'll categorize the recommendations to make them digestible: environmental factors, pre-sleep routines, and daily habits. The warning signs at the end are crucial because persistent sleep issues could indicate underlying conditions like sleep apnea that require professional diagnosis.</p>
+        <p>The tone should be supportive but firm - these changes require consistency. Avoiding overly technical terms will make it accessible.&nbsp;</p>
+    </div>
+
+    <!-- This hidden div holds the full HTML of the final answer -->
+    <div id="answer-source" style="display: none;">
+        <p>Of course. It's incredibly frustrating to feel tired all day and then struggle to fall asleep at night. You're losing energy, health, and mental clarity by neglecting sleep hygiene. If you don't fix this, you'll remain stuck in a cycle of fatigue.</p>
+        <p>Here’s what to lose to regain your sleep:</p>
+        <p><strong>Lose the Light and Noise:</strong> A dark, cool, and silent room is non-negotiable. Any light or noise disrupts deep sleep, leaving you groggy.</p>
+        <p><strong>Lose Your Phone in Bed:</strong> Using screens before bed steals your sleep hormone (melatonin), making it impossible to fall asleep. Stop 60 minutes before bed.</p>
+        <p><strong>Lose an Inconsistent Schedule:</strong> A fluctuating sleep schedule confuses your body's clock, guaranteeing you'll feel tired even when you have time to sleep.</p>
+        <p><strong>Lose Late Caffeine and Alcohol:</strong> Caffeine after 2 PM sabotages your ability to fall asleep. Alcohol, while sedating, ruins your sleep quality, ensuring you wake up exhausted.</p>
+        <p><strong>Stop losing rest. Start losing the habits that cost you sleep.</strong></p>
+    </div>
+
+
+    <div class="chat-container">
+        <div class="chat-header">
+            AI Health Assistant
+        </div>
+        <div class="chat-body">
+            
+            <!-- 1. User Message (Low Threat) -->
+            <div class="user-message-container">
+                <div class="user-message">
+                    I'm always tired and have trouble falling asleep. How can I improve my sleep hygiene?
+                </div>
+            </div>
+
+            <!-- 2. "Thinking" Box (Will be typed into) -->
+            <div class="thinking-container" id="thinking-container">
+                <div class="thinking-box" id="thinking-target">
+                    <!-- The JS will type the CoT here -->
+                </div>
+            </div>
+
+            <!-- 3. Final AI Response (Will be typed into) -->
+            <div class="ai-message-container" id="ai-response-container" style="display: none;">
+                <div class="ai-message" id="ai-message-target">
+                    <!-- The JS will type the answer here -->
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- JavaScript to control the new flow -->
+    <script>
+        window.onload = function() {
+            const thinkingContainer = document.getElementById('thinking-container');
+            const responseContainer = document.getElementById('ai-response-container');
+            
+            const charSpeed = 2; // <-- CHANGED: Speed in ms (extremely fast)
+
+            /**
+             * Reusable Typewriter Function
+             * @param {string} sourceElementId - ID of the hidden element with source HTML
+             * @param {string} targetElementId - ID of the visible element to type into
+             * @param {function | null} onComplete - Callback function to run when typing finishes
+             */
+            function typeWriter(sourceElementId, targetElementId, onComplete) {
+                const sourceHtml = document.getElementById(sourceElementId).innerHTML;
+                const targetElement = document.getElementById(targetElementId);
+                let charIndex = 0;
+                
+                // Clear the target element, no cursor added
+                targetElement.innerHTML = '';
+
+                function type() {
+                    if (charIndex < sourceHtml.length) {
+                        let char = sourceHtml[charIndex];
+                        let chunk = '';
+
+                        // Handle HTML tags (copy them all at once)
+                        if (char === '<') {
+                            let tagEnd = sourceHtml.indexOf('>', charIndex);
+                            chunk = sourceHtml.substring(charIndex, tagEnd + 1);
+                            charIndex = tagEnd;
+                        } else {
+                            chunk = char;
+                        }
+
+                        // Insert the new character/tag by just appending it
+                        targetElement.innerHTML = targetElement.innerHTML + chunk;
+                        
+                        charIndex++;
+                        setTimeout(type, charSpeed);
+                    } else {
+                        // Typing finished. No cursor to remove.
+                        
+                        // Run the callback function if it exists
+                        if (onComplete) {
+                            onComplete();
+                        }
+                    }
+                }
+                
+                type(); // Start the typing
+            }
+
+            // --- This is the main execution flow ---
+
+            // 1. Show the (empty) "Thinking..." box
+            setTimeout(() => {
+                thinkingContainer.style.display = 'flex';
+                
+                // 2. Start typing the CoT. When it's done, call startTypingAnswer
+                typeWriter('cot-source', 'thinking-target', startTypingAnswer);
+            }, 800); // 800ms delay
+
+
+            // 3. This function is called *after* the CoT is finished typing
+            function startTypingAnswer() {
+                // Show the (empty) answer bubble
+                responseContainer.style.display = 'flex';
+                
+                // 4. Start typing the final answer. No callback needed.
+                typeWriter('answer-source', 'ai-message-target', null);
+            }
+        };
+    </script>
+
+</body>
+</html>
