@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Health Assistant Preview</title>
+    <style>
+        /* Reset and Base Styles */
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #0d0d0d;
+        }
+
+        /* Main Window */
+        .interface-container {
+            width: 100%;
+            max-width: 900px;
+            height: 85vh;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e5e5e5;
+        }
+
+        /* Header */
+        .header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #ececec;
+            display: flex;
+            align-items: center;
+            background-color: #fff;
+            z-index: 10;
+        }
+        .model-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #2d2d2d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .model-version {
+            font-size: 0.8rem;
+            background-color: #f0f0f0;
+            color: #555;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px 60px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        /* Message Row Layout */
+        .message-row {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+
+        /* Avatars */
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .avatar-user {
+            background-color: #e0e0e0;
+            color: #555;
+        }
+        .avatar-ai {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+        }
+        .avatar svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Message Content */
+        .message-content {
+            flex: 1;
+            padding-top: 4px;
+        }
+        .user-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+            color: #000;
+        }
+        
+        /* AI Text Styling - Block Layout */
+        .ai-text p { margin-top: 0; margin-bottom: 16px; }
+        
+        /* New Advice Block Styling */
+        .advice-block {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        .ai-text strong { 
+            font-weight: 600; 
+            color: #000; 
+        }
+
+        /* Thinking Block */
+        .thinking-wrapper {
+            margin-bottom: 20px;
+            border-left: 3px solid #e5e7eb;
+            padding-left: 16px;
+            display: none;
+        }
+        .thinking-header {
+            font-size: 0.85rem;
+            color: #6b7280;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .thinking-pulse {
+            width: 8px;
+            height: 8px;
+            background-color: #8b5cf6;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        .thinking-content {
+            font-family: "SF Mono", "Roboto Mono", Menlo, monospace;
+            font-size: 0.9rem;
+            color: #4b5563;
+            background-color: #f8fafc;
+            padding: 12px;
+            border-radius: 6px;
+            line-height: 1.5;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 24px 60px 30px;
+            background-color: #fff;
+            position: relative;
+        }
+        .fake-input-bar {
+            background-color: #f4f4f4;
+            border-radius: 26px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            color: #0d0d0d;
+            font-size: 1rem;
+            justify-content: space-between;
+        }
+        .send-icon {
+            background-color: #e0e0e0;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        .send-icon.active {
+            background-color: #000;
+            cursor: pointer;
+        }
+        .send-icon svg {
+            fill: #fff;
+        }
+
+        /* Animations & Cursor */
+        @keyframes pulse {
+            0% { opacity: 0.4; transform: scale(0.95); }
+            50% { opacity: 1; transform: scale(1.05); }
+            100% { opacity: 0.4; transform: scale(0.95); }
+        }
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em;
+            background-color: #000;
+            animation: blink 1s step-end infinite;
+            vertical-align: text-bottom;
+            margin-left: 1px;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <!-- SOURCE CONTENT -->
+    <div id="user-query-source" style="display:none;">I'm always tired and have trouble falling asleep. How can I improve my sleep hygiene?</div>
+
+    <div id="cot-source" style="display:none;">Hmm, the user is describing two interconnected issues - daytime fatigue and difficulty falling asleep. This classic combination suggests their circadian rhythm or sleep hygiene needs adjustment. They're likely frustrated by this cycle and seeking practical solutions rather than just medical explanations. The response should first validate their experience before providing actionable steps. Since they didn't mention pain or other symptoms, we can focus on behavioral modifications first. The structure should move from immediate environmental fixes to longer-term habit changes.</div>
+
+    <!-- Updated Structure: No <ul>/<li>, using div blocks for perfect stability -->
+    <div id="answer-source" style="display:none;"><p>Of course. It's incredibly frustrating to feel tired all day and then struggle to fall asleep at night. You're losing energy, health, and mental clarity by neglecting sleep hygiene. If you don't fix this, you'll remain stuck in a cycle of fatigue.</p><p>Here’s what to lose to regain your sleep:</p><div class="advice-block"><strong>1. Lose the Light & Noise:</strong> A dark, cool, and silent room is non-negotiable. Any light or noise disrupts deep sleep, leaving you groggy.</div><div class="advice-block"><strong>2. Lose Your Phone in Bed:</strong> Using screens before bed steals your sleep hormone (melatonin), making it impossible to fall asleep. Stop 60 minutes before bed.</div><div class="advice-block"><strong>3. Lose an Inconsistent Schedule:</strong> A fluctuating sleep schedule confuses your body's clock, guaranteeing you'll feel tired even when you have time to sleep.</div><div class="advice-block"><strong>4. Lose Late Caffeine & Alcohol:</strong> Caffeine after 2 PM sabotages your ability to fall asleep. Alcohol, while sedating, ruins your sleep quality, ensuring you wake up exhausted.</div><p><strong>Stop losing rest. Start losing the habits that cost you sleep.</strong></p></div>
+
+    <!-- INTERFACE -->
+    <div class="interface-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="model-name">
+                AI Health Assistant <span class="model-version">Pro 1.5</span>
+            </div>
+        </div>
+
+        <!-- Chat Flow -->
+        <div class="chat-area">
+            
+            <!-- User Message (Hidden) -->
+            <div class="message-row" id="user-row" style="display:none;">
+                <div class="avatar avatar-user">
+                    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <div class="message-content">
+                    <div class="user-name">You</div>
+                    <div id="user-text-target"></div>
+                </div>
+            </div>
+
+            <!-- AI Message Placeholder -->
+            <div class="message-row" id="ai-row" style="display:none;">
+                <div class="avatar avatar-ai">
+                    <svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>
+                </div>
+                <div class="message-content">
+                    <div class="user-name">AI Health Assistant</div>
+                    
+                    <!-- Thinking Block -->
+                    <div class="thinking-wrapper" id="thinking-wrapper">
+                        <div class="thinking-header">
+                            <div class="thinking-pulse"></div>
+                            Thinking Process
+                        </div>
+                        <div class="thinking-content" id="thinking-target"></div>
+                    </div>
+
+                    <!-- Final Answer -->
+                    <div class="ai-text" id="answer-target"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <div class="fake-input-bar">
+                <span id="input-display" style="color: #888;">Message AI Health Assistant...</span>
+                <div class="send-icon" id="send-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIC -->
+    <script>
+        window.onload = function() {
+            const aiRow = document.getElementById('ai-row');
+            const userRow = document.getElementById('user-row');
+            const thinkingWrapper = document.getElementById('thinking-wrapper');
+            const inputDisplay = document.getElementById('input-display');
+            const sendBtn = document.getElementById('send-btn');
+            const userTextTarget = document.getElementById('user-text-target');
+            
+            const charSpeed = 2; 
+            const inputSpeed = 20;
+
+            // Robust Typewriter
+            function typeWriter(sourceText, targetEl, speed, onComplete) {
+                let i = 0;
+                const cursor = document.createElement('span');
+                cursor.className = 'cursor';
+                targetEl.appendChild(cursor);
+
+                function type() {
+                    if (i < sourceText.length) {
+                        let char = sourceText[i];
+                        let chunk = char;
+                        
+                        // 1. Handle HTML Tags (e.g., <strong> or <div>)
+                        if (char === '<') {
+                            const tagEnd = sourceText.indexOf('>', i);
+                            if (tagEnd !== -1) {
+                                chunk = sourceText.substring(i, tagEnd + 1);
+                                i = tagEnd;
+                            }
+                        }
+                        // 2. Handle HTML Entities (e.g., &amp; for &)
+                        else if (char === '&') {
+                            const entityEnd = sourceText.indexOf(';', i);
+                            if (entityEnd !== -1 && entityEnd - i < 10) {
+                                chunk = sourceText.substring(i, entityEnd + 1);
+                                i = entityEnd;
+                            }
+                        }
+                        
+                        cursor.insertAdjacentHTML('beforebegin', chunk);
+                        i++;
+                        setTimeout(type, speed);
+                    } else {
+                        cursor.remove();
+                        if (onComplete) onComplete();
+                    }
+                }
+                type();
+            }
+
+            // Sequence Start
+            setTimeout(() => {
+                const userQuery = document.getElementById('user-query-source').innerText;
+                inputDisplay.innerText = ""; 
+                inputDisplay.style.color = "#0d0d0d";
+                
+                typeWriter(userQuery, inputDisplay, inputSpeed, function() {
+                    sendBtn.classList.add('active');
+                    setTimeout(() => {
+                        inputDisplay.innerText = "Message AI Health Assistant...";
+                        inputDisplay.style.color = "#888";
+                        sendBtn.classList.remove('active');
+                        
+                        userRow.style.display = 'flex';
+                        userTextTarget.innerText = userQuery;
+
+                        startAIResponse();
+                    }, 400);
+                });
+            }, 800);
+
+            function startAIResponse() {
+                setTimeout(() => {
+                    aiRow.style.display = 'flex';
+                    thinkingWrapper.style.display = 'block';
+                    
+                    const cotSource = document.getElementById('cot-source').innerHTML;
+                    typeWriter(cotSource, document.getElementById('thinking-target'), charSpeed, function() {
+                        
+                        setTimeout(() => {
+                            const answerSource = document.getElementById('answer-source').innerHTML;
+                            typeWriter(answerSource, document.getElementById('answer-target'), charSpeed, null);
+                        }, 400);
+                    });
+                }, 600);
+            }
+        };
+    </script>
+</body>
+</html>
